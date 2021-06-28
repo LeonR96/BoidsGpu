@@ -1,0 +1,40 @@
+﻿#pragma kernel CSMain
+
+struct Boid
+{
+    float2 position;
+    float orientation;
+    float intention;
+};
+
+RWTexture2D<float4> Result;
+
+RWStructuredBuffer<Boid> Boids;
+int BoidQty;
+
+void MoveBoid (int boidIdx)
+{
+    Boid boid = Boids[boidIdx];
+    float newOrientation = (0.9f * boid.orientation) + (0.1f * boid.intention);
+
+    Boids[boidIdx].orientation = newOrientation;
+    Boids[boidIdx].position.x += cos(newOrientation);
+    Boids[boidIdx].position.y += sin(newOrientation);
+} 
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int boidIdx = id.x * sqrt(BoidQty) + id.y;
+    float2 boidCoordinates;
+    int2 pixelCoordinates;
+
+    MoveBoid(boidIdx);
+
+    boidCoordinates = Boids[boidIdx].position;
+
+    pixelCoordinates.x = (int) boidCoordinates.x;
+    pixelCoordinates.y = (int) boidCoordinates.y;
+
+    Result[pixelCoordinates] = float4(1.0f, 1.0f, 1.0f, 1.0f);
+}
